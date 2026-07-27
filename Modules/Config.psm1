@@ -23,12 +23,13 @@ function Get-AppConfig {
     $baseFolder   = if ($saved.baseFolder)    { $saved.baseFolder }    else { $env:baseFolder }
     $signinFolder = Join-Path $baseFolder 'O365 Signins'
     $dbPath       = Join-Path $signinFolder 'O365logins.sqlite3'
+    $companiesFilename = if ($env:companiesFilename) { $env:companiesFilename } else { 'companies.xlsx' }
 
     [PSCustomObject]@{
         BaseFolder        = $baseFolder
         SigninFolder      = $signinFolder
         DbPath            = $dbPath
-        CompaniesFile     = Join-Path $baseFolder ($env:companiesFilename ?? 'companies.xlsx')
+        CompaniesFile     = Join-Path $baseFolder $companiesFilename
         AdminEmailsFile   = if ($saved.adminEmailsFile) { $saved.adminEmailsFile } else { $env:adminEmailsFile }
         DownloadsFolder   = if ($saved.downloadsFolder) { $saved.downloadsFolder } else { Join-Path $env:USERPROFILE 'Downloads' }
     }

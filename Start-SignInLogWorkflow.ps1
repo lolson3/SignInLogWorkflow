@@ -1,8 +1,25 @@
-#Requires -Version 5.1
-# Re-launch in STA thread if needed (WPF requirement)
+# This app requires PowerShell 7+. This bootstrap must stay 5.1-parseable so that
+# launching under Windows PowerShell (e.g. right-click "Run with PowerShell")
+# relaunches into pwsh instead of dying on PS7-only syntax.
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+    if ($pwsh) {
+        & $pwsh.Source -NoProfile -File $MyInvocation.MyCommand.Path
+        exit $LASTEXITCODE
+    }
+    Add-Type -AssemblyName PresentationFramework
+    [System.Windows.MessageBox]::Show(
+        "This application requires PowerShell 7, which was not found on this machine.`n`n" +
+        "Install it with:`n`n    winget install Microsoft.PowerShell`n`n" +
+        "or download it from https://aka.ms/powershell",
+        'PowerShell 7 Required', 'OK', 'Error')
+    exit 1
+}
+
+# Re-launch in STA thread if needed (WPF requirement; pwsh defaults to STA)
 if ([System.Threading.Thread]::CurrentThread.ApartmentState -ne 'STA') {
-    & powershell -STA -NoProfile -File $MyInvocation.MyCommand.Path
-    exit
+    & pwsh -STA -NoProfile -File $MyInvocation.MyCommand.Path
+    exit $LASTEXITCODE
 }
 
 Add-Type -AssemblyName PresentationFramework
@@ -11,6 +28,24 @@ Add-Type -AssemblyName WindowsBase
 
 $ScriptRoot = $PSScriptRoot
 
+# ── Unblock scripts if downloaded from the internet ────────────────
+# Windows marks files extracted from a downloaded ZIP with a Zone.Identifier
+# stream. PowerShell's execution policy blocks these as "remote" scripts.
+$blockedFiles = Get-ChildItem -Path $ScriptRoot -Recurse -Include *.ps1,*.psm1 |
+    Where-Object { $_ | Get-Item -Stream 'Zone.Identifier' -ErrorAction SilentlyContinue }
+if ($blockedFiles) {
+    try {
+        $blockedFiles | Unblock-File -ErrorAction Stop
+    } catch {
+        [System.Windows.MessageBox]::Show(
+            "Script files are blocked by Windows and could not be unblocked automatically.`n`n" +
+            "Please run the following command in PowerShell as Administrator:`n`n" +
+            "Get-ChildItem `"$ScriptRoot`" -Recurse -Include *.ps1,*.psm1 | Unblock-File`n`n" +
+            "Error: $($_.Exception.Message)",
+            'Blocked Scripts', 'OK', 'Error')
+        exit 1
+    }
+}
 # Load modules
 Import-Module (Join-Path $ScriptRoot 'Modules\Config.psm1')       -Force
 Import-Module (Join-Path $ScriptRoot 'Modules\ClientList.psm1')   -Force

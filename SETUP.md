@@ -1,13 +1,13 @@
 ---
 port: 
-start: powershell -STA -File .\Start-SignInLogWorkflow.ps1
+start: pwsh -File .\Start-SignInLogWorkflow.ps1
 ---
 
 # Setup
 
 ## Prerequisites
 
-- **Windows** with **PowerShell 5.1** or later
+- **Windows** with **PowerShell 7** or later (`winget install Microsoft.PowerShell`)
 - **Firefox** installed (falls back to the default browser if not found)
 - A UNC share accessible from your machine with the following folder structure:
   ```
@@ -54,10 +54,10 @@ adminEmailsFile=\\server\share\Data\Admin Emails.xlsx
 Right-click `Start-SignInLogWorkflow.ps1` and choose **Run with PowerShell**, or launch it from a terminal:
 
 ```powershell
-powershell -STA -File .\Start-SignInLogWorkflow.ps1
+pwsh -File .\Start-SignInLogWorkflow.ps1
 ```
 
-> The `-STA` flag is required for the WPF UI. The script re-launches itself in STA mode automatically if needed.
+> The app requires PowerShell 7. If launched under Windows PowerShell 5.1 (e.g. via right-click "Run with PowerShell"), it automatically re-launches itself in `pwsh`, or shows an install prompt if PowerShell 7 is not installed.
 
 On first launch, the **Setup** screen will verify that all required paths are accessible. Fix any failures shown in red and click **Retry Checks** until all pass, then click **Proceed to Workflow**.
 
